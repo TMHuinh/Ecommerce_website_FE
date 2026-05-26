@@ -23,20 +23,14 @@ const CartItem = ({
 }) => {
   const [quantityProduct, setQuantityProduct] = useState(quantity);
 
-  // ////////////////////////////////////////
-  // trích xuất thông tin accountID trong token
+  // 1. ĐÃ FIX: Lấy trực tiếp token và accountID từ localStorage (Gọn và an toàn hơn)
   const token = localStorage.getItem("Access_Token");
-  // Tách phần payload từ token (phần thứ hai sau dấu '.')
-  const payloadBase64 = token.split(".")[1];
-  if (!payloadBase64) {
-    console.error("Invalid token format");
-  }
-  // Giải mã Base64
-  const payloadJson = atob(payloadBase64);
-  const payload = JSON.parse(payloadJson);
-  // Trích xuất accountID
-  const accountID = payload.accountID; // Tùy thuộc vào key trong token
-  ///////////////////////////////////////////////////
+  const accountID = localStorage.getItem("Account_ID");
+
+  // 2. Tính toán giá tiền sẵn để tái sử dụng ở dưới HTML
+  const currentDiscount = discountPercent || 0; // Tránh lỗi NaN nếu db cũ thiếu field này
+  const priceAfterDiscount = productPrice * (1 - currentDiscount / 100);
+  const totalLinePrice = priceAfterDiscount * quantityProduct;
 
   // function to update cartItem quantity
   const updateCartItemQuantity = (newQuantity) => {
@@ -112,6 +106,7 @@ const CartItem = ({
       updateCartItemQuantity(quantityProduct + 1);
     }
   };
+
   const handleClickBtnDecreaseQuantity = () => {
     if (quantityProduct > 1) {
       setQuantityProduct(quantityProduct - 1);
@@ -151,29 +146,34 @@ const CartItem = ({
 
       {/* Hình ảnh sản phẩm */}
       <div className="cart-item-img">
-        <img src={productImage} className="cart-item-img-img" />
+        <img src={productImage} className="cart-item-img-img" alt={productName} />
       </div>
 
-      {/* Tên và giá sản phẩm */}
+      {/* Tên và thông tin cơ bản sản phẩm */}
       <div className="cart-item-info">
         <span className="cart-item-info-nameProduct">{productName}</span>
         <span className="cart-item-info-price text-muted">{color}</span>
         <span className="cart-item-info-price text-muted">{size}</span>
+        
+        {/* ĐÃ FIX: Phần giá tiền hiển thị chuẩn xác */}
         <span className="cart-item-info-price text-muted">
-          {MoneyFormat(productPrice * (1 - discountPercent / 100))}
+          {MoneyFormat(priceAfterDiscount)}
 
-          <del className="mx-1"> {MoneyFormat(productPrice)} </del>
+          {/* Chỉ hiện giá gốc gạch ngang khi có khuyến mãi */}
+          {currentDiscount > 0 && (
+            <del className="mx-1"> {MoneyFormat(productPrice)} </del>
+          )}
         </span>
       </div>
 
-      {/* khối chứa quantity và giá  */}
+      {/* khối chứa quantity và tổng giá */}
       <div className="cart-item-quantity-totalPrice">
         {/* Bộ điều khiển số lượng */}
         <div className="cart-item-quantity">
           <div className="cart-item-quantity-block">
-            <a type="button" onClick={handleClickBtnDecreaseQuantity}>
+            <button type="button" className="btn-control" onClick={handleClickBtnDecreaseQuantity}>
               -
-            </a>
+            </button>
             <input
               type="number"
               value={quantityProduct}
@@ -181,18 +181,16 @@ const CartItem = ({
                 setQuantityProduct(parseInt(e.target.value) || quantityProduct);
               }}
             />
-            <a type="button" onClick={handleClickBtnIncreaseQuantity}>
+            <button type="button" className="btn-control" onClick={handleClickBtnIncreaseQuantity}>
               +
-            </a>
+            </button>
           </div>
         </div>
 
-        {/* Giá tổng */}
+        {/* Giá tổng của 1 line item */}
         <div className="cart-item-totalPrice">
           <span style={{ fontWeight: "bold" }}>
-            {MoneyFormat(
-              productPrice * (1 - discountPercent / 100) * quantityProduct
-            )}
+            {MoneyFormat(totalLinePrice)}
           </span>
         </div>
       </div>
@@ -200,6 +198,7 @@ const CartItem = ({
       {/* Xóa */}
       <div className="cart-icon-delete">
         <span
+          style={{ cursor: "pointer" }}
           onClick={() => {
             deleteCartItem();
           }}

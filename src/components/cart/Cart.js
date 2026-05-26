@@ -5,43 +5,20 @@ import CartInfo from "./CartInfo";
 import axios from "axios";
 
 const Cart = () => {
-  ////////////////////////////////////////////////
-  // token test
   const token = localStorage.getItem("Access_Token");
-  // Kiểm tra nếu token tồn tại trước khi xử lý
-  let accountID = null;
-  if (token != null) {
-    try {
-      // Trích xuất thông tin accountID trong token
-      const payloadBase64 = token.split(".")[1];
-      if (!payloadBase64) {
-        console.error("Invalid token format");
-      } else {
-        // Giải mã Base64
-        const payloadJson = atob(payloadBase64);
-        const payload = JSON.parse(payloadJson);
-        // Trích xuất accountID
-        accountID = payload.accountID; // Tùy thuộc vào key trong token
-      }
-    } catch (error) {
-      console.error("Error parsing token:", error);
-    }
-  } else {
-    console.error("No token found in localStorage");
-  }
+  const accountID = localStorage.getItem("Account_ID");
 
-  ////////////////////////////////////////////////
-
-  // cartItem
   const [cartItems, setCartItems] = useState([]);
-
-  // cartItem selected
   const [cartItemsSelected, setCartItemsSelected] = useState([]);
-
-  // gọi api lấy thông tin cart
   const [totalPrice, setTotalPrice] = useState(0);
+  const [isAllSelected, setIsAllSelected] = useState(false);
 
   useEffect(() => {
+    if (!token || !accountID) {
+      console.warn("Chưa đăng nhập, không thể tải giỏ hàng.");
+      return;
+    }
+
     axios
       .get(`http://localhost:8888/api/v1/cart-service/cart/get/${accountID}`, {
         headers: {
@@ -63,46 +40,24 @@ const Cart = () => {
           error.response || error.message
         );
       });
-  }, []);
+  }, [accountID, token]);
 
-  // hàm xử lý khi cartItem bị xóa
   const handleDelete = (productID, color, size) => {
     setCartItems((prevItems) =>
       prevItems.filter(
         (item) =>
-          !(
-            item.productID === productID &&
-            item.color === color &&
-            item.size === size
-          )
+          !(item.productID === productID && item.color === color && item.size === size)
       )
     );
 
     setCartItemsSelected((prevItems) =>
       prevItems.filter(
         (item) =>
-          !(
-            item.productID === productID &&
-            item.color === color &&
-            item.size === size
-          )
+          !(item.productID === productID && item.color === color && item.size === size)
       )
     );
-
-    const newTotalPrice = cartItemsSelected.reduce(
-      (acc, item) =>
-        item.productID === productID
-          ? acc
-          : acc +
-            item.productPrice *
-              (1 - item.discountPercent / 100) *
-              item.quantity,
-      0
-    );
-    setTotalPrice(newTotalPrice);
   };
 
-  // hàm xử lý cập nhật cartInfo khi cartItem thay đổi số lượng
   const handleChangeQuantity = (productID, newQuantity) => {
     setCartItems((prevItems) =>
       prevItems.map((item) =>
@@ -114,25 +69,8 @@ const Cart = () => {
         item.productID === productID ? { ...item, quantity: newQuantity } : item
       )
     );
-
-    const newTotalPrice = cartItemsSelected.reduce(
-      (acc, item) =>
-        item.productID === productID
-          ? acc +
-            item.productPrice * (1 - item.discountPercent / 100) * newQuantity
-          : acc +
-            item.productPrice *
-              (1 - item.discountPercent / 100) *
-              item.quantity,
-      0
-    );
-    setTotalPrice(newTotalPrice);
   };
 
-  // biến quản lý khi tất cả sản phẩm được chọn
-  const [isAllSelected, setIsAllSelected] = useState(false);
-
-  // xử lý khi chọn tất cả sản phẩm
   const handleSelectAllItem = (event) => {
     if (event.target.checked) {
       setIsAllSelected(true);
@@ -143,46 +81,46 @@ const Cart = () => {
     }
   };
 
-  // xử lý khi chọn mua 1 cartItem
   const handleSelectItem = (productID, color, size, isSelected) => {
-    // cập nhật trạng thái "chọn tất cả"
     setIsAllSelected(
       isSelected && cartItemsSelected.length + 1 === cartItems.length
     );
 
     if (isSelected === true) {
-      // Nếu isSelected là true, thêm item vào cartItemsSelected
       const updatedSelectedItems = cartItems.filter(
         (item) =>
           item.productID === productID &&
           item.color === color &&
-          item.size === size &&
-          isSelected === true
+          item.size === size
       );
 
-      // Cập nhật trạng thái cartItemsSelected
       setCartItemsSelected((prevSelectedItems) => [
-        ...prevSelectedItems, // Giữ lại các item đã được chọn trước đó
-        ...updatedSelectedItems, // Thêm các item mới vào
+        ...prevSelectedItems,
+        ...updatedSelectedItems,
       ]);
     } else {
-      // Nếu isSelected là false, xóa item khỏi cartItemsSelected
+      // FIX LỖI: Chỉ uncheck đúng sản phẩm trùng size/màu
       setCartItemsSelected((prevSelectedItems) =>
-        prevSelectedItems.filter((item) => item.productID !== productID)
+        prevSelectedItems.filter(
+          (item) =>
+            !(item.productID === productID && item.color === color && item.size === size)
+        )
       );
     }
   };
 
-  // Tính tổng tiền khi cartItemsSelected thay đổi
+  // TÍNH TỔNG TIỀN DUY NHẤT TẠI ĐÂY (Áp dụng đúng % khuyến mãi)
   useEffect(() => {
     const newTotalPrice = cartItemsSelected.reduce(
-      (acc, item) =>
-        acc +
-        item.productPrice * (1 - item.discountPercent / 100) * item.quantity,
+      (acc, item) => {
+        const discount = item.discountPercent || 0;
+        const priceAfterDiscount = item.productPrice * (1 - discount / 100);
+        return acc + (priceAfterDiscount * item.quantity);
+      },
       0
     );
     setTotalPrice(newTotalPrice);
-  }, [cartItemsSelected]); // useEffect sẽ chạy mỗi khi cartItemsSelected thay đổi
+  }, [cartItemsSelected]);
 
   return (
     <div className="p-3">
@@ -194,7 +132,6 @@ const Cart = () => {
 
       <div className="cart-container">
         <div className="cart-items">
-          {/* thanh navbar cart */}
           <div className="cart-navbar-container ">
             <div className="cart-navbar-checkbox">
               <input
@@ -226,7 +163,7 @@ const Cart = () => {
                   productPrice={item.productPrice}
                   quantity={item.quantity}
                   inventoryQuantity={item.inventoryQuantity}
-                  discountPercent={item.discountPercent}
+                  discountPercent={item.discountPercent || 0}
                   onDelete={handleDelete}
                   onQuantityChange={handleChangeQuantity}
                   selected={handleSelectItem}

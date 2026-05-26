@@ -11,8 +11,8 @@ import ReviewList from "../../components/review-list/ReviewList";
 import MyNavbar from "../../components/header-footer/MyNavbar";
 import FormLogin from "../../components/form-login/FormLogin";
 import axios from "axios";
-import { jwtDecode } from "jwt-decode";
 import { showNotification } from "../../components/utils/Notification";
+
 const ProductDetail = () => {
   const [product, setProduct] = useState(); // Lưu thông tin sản phẩm
   const [current, setCurrent] = useState(0); // Hình ảnh hiện tại
@@ -20,7 +20,6 @@ const ProductDetail = () => {
   const [images, setImages] = useState([]); // Danh sách hình ảnh sản phẩm
   const { id } = useParams(); // Lấy ID từ URL
   const [hoverIndex, setHoverIndex] = useState(null);
-  const token = localStorage.getItem("Access_Token");
   const [colors, setColors] = useState([]); // Danh sách màu
   const [color, setColor] = useState(0); // Chỉ mục màu hiện tại
   const [quantity, setQuantity] = useState(1);
@@ -28,61 +27,79 @@ const ProductDetail = () => {
     size: "S",
     color: "",
   });
+
   const restoreSlug = (slug) => {
     return slug
       .replace(/-/g, " ") // Thay dấu gạch ngang (-) thành khoảng trắng
       .replace(/\s+/g, " ") // Thay thế các khoảng trắng liên tiếp bằng 1 khoảng trắng
       .replace(/\b\w/g, (match) => match.toUpperCase()); // Chuyển chữ cái đầu của mỗi từ thành hoa
   };
+
   const handleClickAddCart = async () => {
-    let tokenParse = jwtDecode(token);
-    let accountID = tokenParse.accountID;
-    let productImage = findProductImage(colors[color]);
+    // 1. Lấy token và UUID mới nhất từ localStorage ngay tại thời điểm click
+    const currentToken = localStorage.getItem("Access_Token");
+    const accountID = localStorage.getItem("Account_ID");
+
+    // 2. Kiểm tra nếu không có token hoặc accountID (chưa đăng nhập)
+    if (!currentToken || !accountID) {
+      showNotification("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!", "error");
+      return;
+    }
+
     try {
-      const response = await axios.post(
+      const productImage = findProductImage(colors[color]);
+
+      // 3. Gửi Request với AccountID chuẩn chỉnh và Payload khớp 100% với DTO
+     const response = await axios.post(
         `http://localhost:8888/api/v1/cart-service/cart/add-item/${accountID}`,
         {
-          productID: product.id,
+          productID: product.id, 
           productName: product.name,
-          size,
+          productImage: productImage,
+          size: size,
           color: colors[color],
-          quantity,
+          quantity: quantity,
           productPrice: product.price,
-          productImage,
-          discountPercent: product.discountPercent,
-          inventoryQuantity: changeInventoryQuantity(),
-          accountID,
+          inventoryQuantity: changeInventoryQuantity(), 
+          // BỎ DẤU // VÀ DÙNG parseInt ĐỂ ÉP KIỂU SỐ NGUYÊN (CHỐNG LỖI 400)
+          discountPercent: parseInt(product.discountPercent) || 0,
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Đính kèm token trong header
-            "Content-Type": "application/json", // Định dạng kiểu dữ liệu JSON
+            Authorization: `Bearer ${currentToken}`,
           },
-        }
+        },
       );
+
       if (response.data.code === 1000) {
         showNotification("Đã thêm sản phẩm vào giỏ hàng");
       }
     } catch (error) {
-      console.log(error);
+      console.error("Lỗi khi thêm vào giỏ hàng:", error);
+      if (error.response && error.response.status === 401) {
+        showNotification("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", "error");
+      } else {
+        showNotification("Có lỗi xảy ra, vui lòng thử lại sau!", "error");
+      }
     }
   };
+
   const findProductImage = (color) => {
     if (product) {
       var variant = product.variants.find((variant) => variant.color === color);
       return variant.imageURL || "";
     }
   };
+
   // Fetch dữ liệu sản phẩm từ API
   useEffect(() => {
     const fetchProducts = async () => {
-      console.log(id);
       try {
         const response = await fetch(
           `http://localhost:8888/api/v1/product-service/product/fbn/${encodeURIComponent(
-            restoreSlug(id)
+            restoreSlug(id),
           )}`,
-          { method: "GET" }
+          { method: "GET" },
         );
 
         if (!response.ok) {
@@ -126,9 +143,10 @@ const ProductDetail = () => {
   const changeInventoryQuantity = () => {
     const matchingVariant = product?.variants.find(
       (variant) =>
-        variant.size === condition.size && variant.color === condition.color
+        variant.size === condition.size && variant.color === condition.color,
     );
-    return matchingVariant ? matchingVariant.inventoryQuantity : ""; // Trả về số lượng tồn hoặc ""
+    // TRẢ VỀ SỐ 0 NẾU KHÔNG CÓ BIẾN THỂ
+    return matchingVariant ? matchingVariant.inventoryQuantity : 0; 
   };
 
   // Đổi hình ảnh hiện tại
@@ -161,7 +179,7 @@ const ProductDetail = () => {
   // Tính giá sau khi giảm giá
   const calculateDiscountedPrice = (originalPrice, discountPercent) => {
     return formatCurrency(
-      originalPrice - (originalPrice * discountPercent) / 100
+      originalPrice - (originalPrice * discountPercent) / 100,
     );
   };
 
@@ -201,7 +219,7 @@ const ProductDetail = () => {
                 {images.slice(1, 5).map((img, index) => (
                   <Col className="col-3" key={index}>
                     <img
-                      className={current == index + 1 ? "current" : ""}
+                      className={current === index + 1 ? "current" : ""}
                       src={img}
                       alt={`Hình ảnh ${index + 1}`}
                       onClick={() => handleClick(index + 1)}
@@ -221,7 +239,7 @@ const ProductDetail = () => {
                   <span className="mx-2">
                     {calculateDiscountedPrice(
                       product.price,
-                      product.discountPercent
+                      product.discountPercent,
                     )}
                   </span>
                   <del className="mx-2">{formatCurrency(product.price)}</del>
@@ -233,8 +251,9 @@ const ProductDetail = () => {
                   {["S", "M", "L"].map((item) => (
                     <div
                       key={item}
-                      className={`size-item mx-2 ${size === item ? "active" : ""
-                        }`}
+                      className={`size-item mx-2 ${
+                        size === item ? "active" : ""
+                      }`}
                       onClick={() => handleSizeClick(item)}
                     >
                       <span>{item}</span>
@@ -248,8 +267,9 @@ const ProductDetail = () => {
                   <Col
                     key={index}
                     xl={4}
-                    className={`col-4 color-item mx-1 ${color === index ? "active-color" : ""
-                      }`}
+                    className={`col-4 color-item mx-1 ${
+                      color === index ? "active-color" : ""
+                    }`}
                     onClick={() => handleColorClick(index)}
                   >
                     <small className="color-title">{item}</small>
