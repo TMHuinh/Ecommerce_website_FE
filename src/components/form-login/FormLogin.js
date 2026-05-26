@@ -4,6 +4,7 @@ import "./FormLogin.css";
 import { useAuthContext } from "../../context/AuthContext";
 import axios from "axios";
 import { showNotification } from "../utils/Notification";
+
 const FormLogin = () => {
   const [showpassword, setShowPassWord] = useState(false);
   const { showForm, login, setLogin, setShowForm } = useAuthContext();
@@ -18,10 +19,12 @@ const FormLogin = () => {
     address: "",
     password: "",
   });
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
+
   const formRef = useRef(null);
   // Khởi tạo state để lưu trữ năm sinh
   const [yearOfBirth, setYearOfBirth] = useState("");
@@ -36,6 +39,7 @@ const FormLogin = () => {
   const handleYearChange = (event) => {
     setYearOfBirth(event.target.value);
   };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (formRef.current && !formRef.current.contains(event.target)) {
@@ -48,6 +52,7 @@ const FormLogin = () => {
       document.removeEventListener("mousedown", handleClickOutside); // Clean up
     };
   }, [setShowForm]);
+
   useEffect(() => {
     if (showForm) {
       document.body.style.overflow = "hidden";
@@ -55,6 +60,7 @@ const FormLogin = () => {
       document.body.style.overflowY = "auto";
     }
   }, [showForm]);
+
   const handleClickLogIn = async () => {
     if (usernamelogin === "") {
       showNotification("Vui lòng nhập tên đăng nhập");
@@ -78,17 +84,30 @@ const FormLogin = () => {
           },
         }
       );
-      // Assuming the token is returned in the response
+      
       const token = response.data.result.token;
-      // Save the token in localStorage
+      
+      // LƯU Ý QUAN TRỌNG TẠI ĐÂY:
+      // Tùy thuộc vào JSON backend trả về mà biến ID có thể nằm ở: response.data.result.id, result.user_id, hoặc result.user.id
+      // Mình đang để tạm cấu trúc phổ biến nhất. Nếu bị undefined, bạn hãy bật console.log này lên để check JSON trả về nhé:
+      // console.log("Login Response Data:", response.data);
+      const accountId = response.data.result.id || response.data.result.user_id || response.data.result.userId || response.data.result.user?.id;
+
       if (token) {
+        // Save the token and Account ID in localStorage
         localStorage.setItem("Access_Token", token);
-        // Optionally, you could update your app's state/context to store user info or token
+        
+        if (accountId) {
+           localStorage.setItem("Account_ID", accountId);
+        } else {
+           console.warn("Không tìm thấy UUID trong API Login. Vui lòng kiểm tra lại JSON trả về.");
+        }
+
         setShowForm(false); // Close the login form on successful login
+        showNotification("Đăng nhập thành công!");
       }
     } catch (error) {
       console.error("Login failed:", error);
-      // You can show an error message to the user, for example:
       showNotification("Thông tin đăng nhập không chính xác");
     }
   };
@@ -97,6 +116,7 @@ const FormLogin = () => {
     e.preventDefault(); // Prevents the default form submission behavior
     handleClickLogIn(); // Call your login function here
   };
+
   const handleClickRegister = async (e) => {
     e.preventDefault(); // Prevents the default form submission behavior
     const { name, phoneNumber, email, gender, password, address } = formData;
@@ -114,7 +134,7 @@ const FormLogin = () => {
     }
 
     try {
-      // Make API request for registration (replace with your API endpoint)
+      // Make API request for registration
       const response = await axios.post(
         "http://localhost:8888/api/v1/identity-service/user/create",
         {
@@ -203,7 +223,7 @@ const FormLogin = () => {
                     />
                     {showpassword ? (
                       <svg
-                        class={`icon icon-eye icon-toggle-password`}
+                        className={`icon icon-eye icon-toggle-password`}
                         viewBox="0 0 16 16"
                         fill="none"
                         onClick={() => setShowPassWord(!showpassword)}
@@ -217,7 +237,7 @@ const FormLogin = () => {
                       </svg>
                     ) : (
                       <svg
-                        class={`icon icon-hide-eye icon-toggle-password`}
+                        className={`icon icon-hide-eye icon-toggle-password`}
                         viewBox="0 0 16 16"
                         fill="none"
                         onClick={() => setShowPassWord(!showpassword)}
@@ -230,7 +250,7 @@ const FormLogin = () => {
                         <path
                           d="M12.9761 3L2.97614 13"
                           stroke="black"
-                          stroke-linejoin="round"
+                          strokeLinejoin="round"
                         ></path>
                         <path
                           d="M5.99982 8.02081C5.99982 6.91624 6.89525 6.02081 7.99982 6.02081"
@@ -374,7 +394,7 @@ const FormLogin = () => {
         <Row className="text-center close-btn-small-screen">
           <i
             onClick={() => setShowForm(false)}
-            class="fa-regular fa-circle-xmark"
+            className="fa-regular fa-circle-xmark"
           ></i>
         </Row>
       </Col>
