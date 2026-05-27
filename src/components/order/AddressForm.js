@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./AddressForm.css";
 
+const ADDRESS_API = "http://localhost:8888/api/v1/order-service/address";
+
 const AddressForm = ({ setAddress }) => {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -16,15 +18,13 @@ const AddressForm = ({ setAddress }) => {
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [communes, setCommunes] = useState([]);
-  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    // Gọi API để lấy danh sách tỉnh thành
     axios
-      .get("http://localhost:8888/api/v1/order-service/address/province")
+      .get(`${ADDRESS_API}/province`)
       .then((response) => {
         if (response.data.code === 1000) {
-          setProvinces(response.data.result);
+          setProvinces(response.data.result || []);
         } else {
           console.error("Lỗi khi tải danh sách tỉnh:", response.data);
         }
@@ -36,29 +36,35 @@ const AddressForm = ({ setAddress }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    setAddress((prevData) => ({ ...prevData, [name]: value }));
 
     if (name === "province") {
-      // Tìm tỉnh từ mảng provinces dựa trên ID đã chọn
+      setFormData((prevData) => ({
+        ...prevData,
+        province: value,
+        district: "",
+        commune: "",
+      }));
+      setDistricts([]);
+      setCommunes([]);
+
       const selectedProvince = provinces.find(
         (province) => province.idProvince === value
       );
 
-      if (selectedProvince) {
-        setAddress({
-          ...formData,
-          province: selectedProvince.name, // Lưu tên tỉnh
-        });
-      }
+      setAddress((prevData) => ({
+        ...prevData,
+        province: selectedProvince ? selectedProvince.name : "",
+        district: "",
+        commune: "",
+      }));
+
+      if (!value) return;
 
       axios
-        .get(
-          `http://localhost:8888/api/v1/order-service/address/district/${value}`
-        )
+        .get(`${ADDRESS_API}/district/${value}`)
         .then((response) => {
           if (response.data.code === 1000) {
-            setDistricts(response.data.result);
+            setDistricts(response.data.result || []);
           } else {
             console.error("Lỗi khi tải danh sách quận/huyện:", response.data);
           }
@@ -66,28 +72,34 @@ const AddressForm = ({ setAddress }) => {
         .catch((error) => {
           console.error("Lỗi API:", error);
         });
+      return;
     }
 
     if (name === "district") {
-      // Tìm tỉnh từ mảng provinces dựa trên ID đã chọn
+      setFormData((prevData) => ({
+        ...prevData,
+        district: value,
+        commune: "",
+      }));
+      setCommunes([]);
+
       const selectedDistrict = districts.find(
         (district) => district.idDistrict === value
       );
 
-      if (selectedDistrict) {
-        setAddress((prevData) => ({
-          ...prevData,
-          district: selectedDistrict.name, // Lưu tên tỉnh
-        }));
-      }
+      setAddress((prevData) => ({
+        ...prevData,
+        district: selectedDistrict ? selectedDistrict.name : "",
+        commune: "",
+      }));
+
+      if (!value) return;
 
       axios
-        .get(
-          `http://localhost:8888/api/v1/order-service/address/commune/${value}`
-        )
+        .get(`${ADDRESS_API}/commune/${value}`)
         .then((response) => {
           if (response.data.code === 1000) {
-            setCommunes(response.data.result);
+            setCommunes(response.data.result || []);
           } else {
             console.error("Lỗi khi tải danh sách xã/phường:", response.data);
           }
@@ -95,21 +107,25 @@ const AddressForm = ({ setAddress }) => {
         .catch((error) => {
           console.error("Lỗi API:", error);
         });
+      return;
     }
 
     if (name === "commune") {
-      // Tìm tỉnh từ mảng commune dựa trên ID đã chọn
+      setFormData((prevData) => ({ ...prevData, commune: value }));
+
       const selectedCommune = communes.find(
         (commune) => commune.idCommune === value
       );
 
-      if (selectedCommune) {
-        setAddress((prevData) => ({
-          ...prevData,
-          commune: selectedCommune.name, // Lưu tên tỉnh
-        }));
-      }
+      setAddress((prevData) => ({
+        ...prevData,
+        commune: selectedCommune ? selectedCommune.name : "",
+      }));
+      return;
     }
+
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+    setAddress((prevData) => ({ ...prevData, [name]: value }));
   };
 
   const handleSubmit = (e) => {
@@ -129,7 +145,6 @@ const AddressForm = ({ setAddress }) => {
       </h4>
       <hr />
       <form onSubmit={handleSubmit} className="row g-3">
-        {/* họ tên */}
         <div className="col-12 d-flex align-items-center">
           <label
             htmlFor="fullName"
@@ -150,7 +165,6 @@ const AddressForm = ({ setAddress }) => {
           />
         </div>
 
-        {/* email */}
         <div className="col-12 d-flex align-items-center">
           <label
             htmlFor="email"
@@ -190,6 +204,7 @@ const AddressForm = ({ setAddress }) => {
             required
           />
         </div>
+
         <div className="col-12 d-flex align-items-center">
           <label
             htmlFor="province"
@@ -206,7 +221,7 @@ const AddressForm = ({ setAddress }) => {
             onChange={handleChange}
             required
           >
-            <option>Chọn Tỉnh/Thành Phố</option>
+            <option value="">Chọn Tỉnh/Thành Phố</option>
             {provinces.map((province) => (
               <option key={province.idProvince} value={province.idProvince}>
                 {province.name}
@@ -214,6 +229,7 @@ const AddressForm = ({ setAddress }) => {
             ))}
           </select>
         </div>
+
         <div className="col-12 d-flex align-items-center">
           <label
             htmlFor="district"
@@ -229,8 +245,9 @@ const AddressForm = ({ setAddress }) => {
             value={formData.district}
             onChange={handleChange}
             required
+            disabled={!formData.province}
           >
-            <option>Chọn Quận/Huyện</option>
+            <option value="">Chọn Quận/Huyện</option>
             {districts.map((district) => (
               <option key={district.idDistrict} value={district.idDistrict}>
                 {district.name}
@@ -238,6 +255,7 @@ const AddressForm = ({ setAddress }) => {
             ))}
           </select>
         </div>
+
         <div className="col-12 d-flex align-items-center">
           <label
             htmlFor="commune"
@@ -253,8 +271,9 @@ const AddressForm = ({ setAddress }) => {
             value={formData.commune}
             onChange={handleChange}
             required
+            disabled={!formData.district}
           >
-            <option>Chọn Phường/Xã</option>
+            <option value="">Chọn Phường/Xã</option>
             {communes.map((commune) => (
               <option key={commune.idCommune} value={commune.idCommune}>
                 {commune.name}
@@ -262,20 +281,21 @@ const AddressForm = ({ setAddress }) => {
             ))}
           </select>
         </div>
+
         <div className="col-12 d-flex align-items-center">
           <label
-            htmlFor=""
+            htmlFor="address"
             className="form-label me-2 mb-0"
             style={{ width: "150px" }}
           >
             Địa chỉ nhận hàng:
           </label>
           <input
-            type="tel"
+            type="text"
             className="form-control small-placeholder"
             id="address"
             name="address"
-            // value={formData.phoneNumber}
+            value={formData.address}
             onChange={handleChange}
             placeholder="Nhập địa chỉ nhận hàng"
             required
