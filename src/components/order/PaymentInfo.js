@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./PaymentInfo.css";
 import { Stomp } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
 import axios from "axios";
 import MoneyFormat from "../utils/MoneyFormat";
 import { showNotification } from "../utils/Notification";
@@ -18,7 +19,7 @@ const PaymentInfo = ({
   console.log(accountID);
   // websocket
   useEffect(() => {
-    const socket = new WebSocket(
+    const socket = new SockJS(
       "http://localhost:8888/api/v1/order-service/websocket/ws"
     );
     const client = Stomp.over(socket);
@@ -162,7 +163,7 @@ const PaymentInfo = ({
     consigneePhone: addressInfo?.phoneNumber,
     totalPrice: totalMoney,
     address: `${addressInfo?.address}, ${addressInfo?.commune}, ${addressInfo?.district}, ${addressInfo?.province}`,
-    accountID, // Replace with actual accountID
+    accountID: "c01779dd-064b-4388-b36d-341d8caf2341", // Replace with actual accountID
     voucherID: voucherInfo ? voucherInfo.id : "", // Assuming voucherInfo contains a valid ID
     orderDetails: orderedProduct.map((item) => ({
       productID: item.productID,
