@@ -92,6 +92,7 @@ const FormLogin = () => {
       // Mình đang để tạm cấu trúc phổ biến nhất. Nếu bị undefined, bạn hãy bật console.log này lên để check JSON trả về nhé:
       // console.log("Login Response Data:", response.data);
       const accountId = response.data.result.id || response.data.result.user_id || response.data.result.userId || response.data.result.user?.id;
+      const customerId = response.data.result.customerId || response.data.result.customer_id || response.data.result.user?.id;
 
       if (token) {
         // Save the token and Account ID in localStorage
@@ -101,6 +102,10 @@ const FormLogin = () => {
            localStorage.setItem("Account_ID", accountId);
         } else {
            console.warn("Không tìm thấy UUID trong API Login. Vui lòng kiểm tra lại JSON trả về.");
+        }
+
+        if (customerId) {
+          localStorage.setItem("Customer_ID", customerId);
         }
 
         setShowForm(false); // Close the login form on successful login

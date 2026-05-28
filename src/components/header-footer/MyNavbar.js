@@ -23,19 +23,39 @@ const MyNavbar = () => {
 
   useEffect(() => {
     if (token != null) {
-      const usernamefromtoken = jwtDecode(token);
-      setUsername(usernamefromtoken.name);
+      try {
+        const usernamefromtoken = jwtDecode(token);
+        setUsername(usernamefromtoken.name);
+      } catch (error) {
+        console.error("Token không hợp lệ:", error);
+      }
     }
   }, [token]);
 
   useEffect(() => {
     if (token !== null) {
-      const tokenParse = jwtDecode(token);
-      const userID = tokenParse.userID;
+      let tokenParse;
+      try {
+        tokenParse = jwtDecode(token);
+      } catch (error) {
+        console.error("Token không hợp lệ:", error);
+        return;
+      }
+
+      const userID =
+        tokenParse.customerId ||
+        localStorage.getItem("Customer_ID") ||
+        tokenParse.userID ||
+        tokenParse.sub;
+
+      if (!userID) {
+        console.warn("Không tìm thấy userID/accountID, bỏ qua API user info.");
+        return;
+      }
 
       axios
         .get(
-          `http://localhost:8888/api/v1/identity-service/user/fbid/${userID}`,
+          `http://localhost:8888/api/v1/identity-service/user/${userID}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -115,9 +135,9 @@ const MyNavbar = () => {
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto">
               <Nav.Link href="/">Home</Nav.Link>
-              <Nav.Link href="#">About</Nav.Link>
+              <Nav.Link href="/about">About</Nav.Link>
               <Nav.Link href="/product/all">Product</Nav.Link>
-              <Nav.Link href="#">Contact</Nav.Link>
+              <Nav.Link href="/contact">Contact</Nav.Link>
             </Nav>
           </Navbar.Collapse>
           <Col className="box-search">
@@ -160,7 +180,9 @@ const MyNavbar = () => {
                       <li onClick={() => setShowInfoModal(true)}>
                         Thông tin cá nhân
                       </li>
-                      <li>Lịch sử mua hàng</li>
+                      <li onClick={() => (window.location.href = "/order-history")}>
+                        Lịch sử mua hàng
+                      </li>
                       <li onClick={() => setShowPassWordModal(true)}>
                         Đổi mật khẩu
                       </li>

@@ -7,6 +7,25 @@ import MoneyFormat from "../utils/MoneyFormat";
 import { showNotification } from "../utils/Notification";
 import { jwtDecode } from "jwt-decode";
 
+const getAccountID = (token) => {
+  const savedAccountID = localStorage.getItem("Account_ID");
+  if (savedAccountID) {
+    return savedAccountID;
+  }
+
+  if (!token) {
+    return "";
+  }
+
+  try {
+    const tokenParse = jwtDecode(token);
+    return tokenParse.accountID || tokenParse.userID || tokenParse.sub || "";
+  } catch (error) {
+    console.error("Token không hợp lệ:", error);
+    return "";
+  }
+};
+
 const PaymentInfo = ({
   orderedProducts,
   addressInfo,
@@ -14,98 +33,103 @@ const PaymentInfo = ({
   voucherInfo,
 }) => {
   const token = localStorage.getItem("Access_Token");
-  const tokenParse = jwtDecode(token);
-  const accountID = tokenParse.accountID;
-  console.log(accountID);
+  const accountID = getAccountID(token);
   // websocket
   useEffect(() => {
-    const socket = new SockJS(
-      "http://localhost:8888/api/v1/order-service/websocket/ws"
+    const client = Stomp.over(
+      () => new SockJS("http://localhost:8888/api/v1/order-service/websocket/ws")
     );
-    const client = Stomp.over(socket);
+    client.debug = () => {};
 
-    client.connect({}, () => {
-      console.log("Connected to WebSocket");
+    const handleOrderMessage = (message) => {
+      // nếu thanh toán bằng vnpay thì tạo vnpay
+      const msgParts = message.split(","); // Tách chuỗi theo dấu phẩy
 
-      client.subscribe("/topic/orders", (msg) => {
-        // nếu thanh toán bằng vnpay thì tạo vnpay
-        const msgParts = msg.body.split(","); // Tách chuỗi theo dấu phẩy
+      const orderid = msgParts[1]; // OrderID sẽ là phần thứ 2 (index 1)
+      const totalprice = msgParts[2];
+      const totalprice1 = parseFloat(totalprice);
+      if (message === "Order successfully processed") {
+        setIsLoading(false);
+        setShowMessageSuccess(true);
+        return;
+      }
 
-        const orderid = msgParts[1]; // OrderID sẽ là phần thứ 2 (index 1)
-        const totalprice = msgParts[2];
-        const totalprice1 = parseFloat(totalprice);
-        console.log(orderid, totalprice1);
-
-        if (msg.body === "Order successfully processed") {
-          setIsLoading(false);
-          setShowMessageSuccess(true);
-          return;
-        }
-
-        if (
-          msg.body.includes("Order successfully processed") &&
-          orderid !== "" &&
-          totalprice1 !== ""
-        ) {
-          const paymentData = {
-            amount: totalprice1,
-            orderID: orderid,
-          };
-          axios
-            .post(
-              "http://localhost:8888/api/v1/order-service/payment/create_payment",
-              paymentData,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "application/json",
-                },
-              }
-            )
-            .then((response) => {
-              if (response.data.code === 1000) {
-                window.location.href = response.data.result.url;
-              } else {
-                setIsLoading(false); // Tắt spinner nếu gọi API thất bại
-                setMessageFail("Lỗi hệ thống, vui lòng thử lại sau!");
-                setShowMessageFail(true);
-                console.error("Lỗi khi gọi API:", response.data.message);
-              }
-            })
-            .catch((error) => {
-              setIsLoading(false); // Tắt spinner nếu gặp lỗi
+      if (
+        message.includes("Order successfully processed") &&
+        orderid !== "" &&
+        totalprice1 !== ""
+      ) {
+        const paymentData = {
+          amount: totalprice1,
+          orderID: orderid,
+        };
+        axios
+          .post(
+            "http://localhost:8888/api/v1/order-service/payment/create_payment",
+            paymentData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          )
+          .then((response) => {
+            if (response.data.code === 1000) {
+              window.location.href = response.data.result.url;
+            } else {
+              setIsLoading(false); // Tắt spinner nếu gọi API thất bại
               setMessageFail("Lỗi hệ thống, vui lòng thử lại sau!");
               setShowMessageFail(true);
-              console.error(
-                "Lỗi khi gọi API:",
-                error.response || error.message
-              );
-            });
-          return;
-        }
+              console.error("Lỗi khi gọi API:", response.data.message);
+            }
+          })
+          .catch((error) => {
+            setIsLoading(false); // Tắt spinner nếu gặp lỗi
+            setMessageFail("Lỗi hệ thống, vui lòng thử lại sau!");
+            setShowMessageFail(true);
+            console.error(
+              "Lỗi khi gọi API:",
+              error.response || error.message
+            );
+          });
+        return;
+      }
 
-        if (msg.body === "Fail(Voucher sold out)") {
-          setMessageFail("Đã hết Voucher, vui lòng thử lại!");
-          setIsLoading(false);
-          setShowMessageFail(true);
-          return;
-        }
+      if (message === "Fail(Voucher sold out)") {
+        setMessageFail("Đã hết Voucher, vui lòng thử lại!");
+        setIsLoading(false);
+        setShowMessageFail(true);
+        return;
+      }
 
-        if (msg.body === "Fail(Product sold out)") {
-          setMessageFail("Đã hết sản phẩm, vui lòng thử lại!");
-          setIsLoading(false);
-          setShowMessageFail(true);
-          return;
-        }
-      });
-    });
+      if (message === "Fail(Product sold out)") {
+        setMessageFail("Đã hết sản phẩm, vui lòng thử lại!");
+        setIsLoading(false);
+        setShowMessageFail(true);
+        return;
+      }
+    };
+
+    client.connect(
+      {},
+      () => {
+        console.log("Connected to WebSocket");
+        client.subscribe("/topic/orders", (msg) => {
+          handleOrderMessage(msg.body);
+        });
+      },
+      (error) => {
+        console.error("WebSocket error:", error);
+      }
+    );
 
     return () => {
-      if (client) {
+      if (client.connected) {
         client.disconnect();
       }
     };
-  }, []); // Đảm bảo kết nối chỉ được thiết lập một lần
+  }, [token]); // Đảm bảo kết nối được cập nhật khi token thay đổi
   const [isLoading, setIsLoading] = useState(false);
   const [showMessageSuccess, setShowMessageSuccess] = useState(false);
   const [showMessageFail, setShowMessageFail] = useState(false);
@@ -163,7 +187,7 @@ const PaymentInfo = ({
     consigneePhone: addressInfo?.phoneNumber,
     totalPrice: totalMoney,
     address: `${addressInfo?.address}, ${addressInfo?.commune}, ${addressInfo?.district}, ${addressInfo?.province}`,
-    accountID: "c01779dd-064b-4388-b36d-341d8caf2341", // Replace with actual accountID
+    accountID,
     voucherID: voucherInfo ? voucherInfo.id : "", // Assuming voucherInfo contains a valid ID
     orderDetails: orderedProduct.map((item) => ({
       productID: item.productID,
@@ -210,6 +234,10 @@ const PaymentInfo = ({
     }
     if (!orderData.payment) {
       showNotification("Phương thức thanh toán không được để trống");
+      return;
+    }
+    if (!orderData.accountID) {
+      showNotification("Vui lòng đăng nhập trước khi đặt hàng");
       return;
     }
 
@@ -394,3 +422,4 @@ const PaymentInfo = ({
   );
 };
 export default PaymentInfo;
+

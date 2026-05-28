@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Col } from "react-bootstrap";
 import "./Review.css";
 const Review = ({ review }) => {
@@ -12,10 +12,10 @@ const Review = ({ review }) => {
             r="15"
             fill="white"
             stroke="black"
-            stroke-width="1"
+            strokeWidth="1"
           />
         </svg>
-        <i class="fa-regular fa-user"></i>
+        <i className="fa-regular fa-user"></i>
       </div>
       <div className="info">
         <div>

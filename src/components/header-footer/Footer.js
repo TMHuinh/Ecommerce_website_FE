@@ -1,93 +1,128 @@
 import React from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import "./Footer.css";
+
 const Footer = () => {
   return (
-    <div className="footer">
-      <div className="bg-light">
+    <footer className="footer">
+      <div className="footer-support">
         <Container>
-          <Row className="prev-contact">
-            <Col className="contact">
-              <span>
-                <i class="fa fa-phone mx-2"></i>
-              </span>
-              <span className="mx-2">Hỗ trợ / Mua hàng:</span>
-              <a href="#" className="mx-2">
-                0862642568
-              </a>
+          <div className="support-content">
+            <div className="support-icon">
+              <i className="fa fa-phone"></i>
+            </div>
+
+            <span>Hỗ trợ / Mua hàng:</span>
+
+            <a href="tel:0862642568">0862642568</a>
+          </div>
+        </Container>
+      </div>
+
+      <div className="footer-main">
+        <Container>
+          <Row className="gy-4">
+            <Col xl={3} lg={3} md={6} xs={12}>
+              <div className="footer-column">
+                <h5>Giới thiệu</h5>
+
+                <p>Hộ Kinh Doanh Bao GT</p>
+
+                <p>
+                  MST 8752797026-001 do UBND Q.Tân Bình cấp ngày 14/11/2022
+                </p>
+
+                <img
+                  className="footer-bct-img"
+                  src="//file.hstatic.net/200000312481/file/dathongbaobct_150_74a9d1876907440bb5f121381c6c6c0a_grande.png"
+                  alt="Đã thông báo Bộ Công Thương"
+                />
+              </div>
+            </Col>
+
+            <Col xl={3} lg={3} md={6} xs={12}>
+              <div className="footer-column footer-links">
+                <h5>Liên kết</h5>
+
+                <a href="/product/all">Tìm kiếm</a>
+                <a href="/about">Giới thiệu</a>
+                <a href="#">Chính sách thanh toán</a>
+                <a href="#">Chính sách khiếu nại</a>
+                <a href="#">Chính sách vận chuyển</a>
+                <a href="#">Chính sách đổi trả</a>
+                <a href="#">Chính sách bảo hành</a>
+                <a href="#">Chính sách kiểm hàng</a>
+                <a href="#">Chính sách bảo mật</a>
+              </div>
+            </Col>
+
+            <Col xl={3} lg={3} md={6} xs={12}>
+              <div className="footer-column">
+                <h5>Thông tin liên hệ</h5>
+
+                <div className="footer-contact-item">
+                  <i className="fa-solid fa-location-dot"></i>
+                  <span>
+                    22 Nguyễn Thái Học - Phường Tân Thành - Quận Tân Phú -
+                    TP.Hồ Chí Minh
+                  </span>
+                </div>
+
+                <div className="footer-contact-item">
+                  <i className="fa-solid fa-mobile-screen-button"></i>
+                  <span>0862642568</span>
+                </div>
+
+                <div className="footer-contact-item">
+                  <i className="fa-solid fa-envelope"></i>
+                  <span>outerity.local@gmail.com</span>
+                </div>
+
+                <div className="footer-contact-item">
+                  <i className="fa-brands fa-telegram"></i>
+                  <span>Outerity Official</span>
+                </div>
+              </div>
+            </Col>
+
+            <Col xl={3} lg={3} md={6} xs={12}>
+              <div className="footer-column">
+                <h5>Fanpage</h5>
+
+                <div className="footer-fanpage">
+                  <p>Theo dõi Outerity để cập nhật sản phẩm mới nhất.</p>
+
+                  <div className="footer-socials">
+                    <a href="#">
+                      <i className="fa-brands fa-facebook-f"></i>
+                    </a>
+
+                    <a href="#">
+                      <i className="fa-brands fa-instagram"></i>
+                    </a>
+
+                    <a href="#">
+                      <i className="fa-brands fa-tiktok"></i>
+                    </a>
+
+                    <a href="#">
+                      <i className="fa-brands fa-youtube"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
             </Col>
           </Row>
         </Container>
       </div>
-      <br />
-      <div>
+
+      <div className="footer-bottom">
         <Container>
-          <Row>
-            <Col xl={3} className=" col-12 introduce">
-              <h5>Giới thiệu</h5>
-              <span>Hộ Kinh Doanh Bao GT</span>
-              <span>
-                MST 8752797026-001 do UBND Q.Tân Bình cấp ngày 14/11/2022
-              </span>
-              <img
-                src="//file.hstatic.net/200000312481/file/dathongbaobct_150_74a9d1876907440bb5f121381c6c6c0a_grande.png"
-                alt=""
-              ></img>
-            </Col>
-            <Col xl={3} className="link col-12">
-              <h5>Liên kết</h5>
-              <a href="#">Tìm kiếm</a>
-              <br />
-              <a href="#">Giới thiệu</a>
-              <br />
-              <a href="#">Chính sách thanh toán</a>
-              <br />
-              <a href="#">Chính sách khiếu nại</a>
-              <br />
-              <a href="#">Chính sách vận chuyển</a>
-              <br />
-              <a href="#">Chính sách đổi trả</a>
-              <br />
-              <a href="#">Chính sách bảo hành</a>
-              <br />
-              <a href="#">Chính sách kiểm hàng</a>
-              <br />
-              <a href="#">Chính sách bảo mật</a>
-            </Col>
-            <Col xl={3} className="col-12">
-              <h5>Thông tin liên hệ</h5>
-              <div>
-                <i class="fa-solid fa-location-crosshairs mx-2"></i>
-                <span>
-                  22 Nguyễn Thái Học - Phường Tân Thành - Quận Tân Phú - TP.Hồ
-                  Chí Minh
-                </span>
-              </div>
-              <div>
-                <i class="fa-solid fa-mobile mx-2"></i>
-                <span>0862642568</span>
-              </div>
-              <div>
-                <i class="fa-solid fa-inbox mx-2"></i>
-                <span>coming soon</span>
-              </div>
-              <div>
-                {" "}
-                <i class="fa-brands fa-telegram mx-2"></i>
-                <span>outerity.local@gmail.com</span>
-              </div>
-            </Col>
-            <Col xl={3}>
-              <h5>Fanpage</h5>
-            </Col>
-          </Row>
+          <p>Copyright © 2024 Outerity. Powered by TKDYY</p>
         </Container>
       </div>
-      <hr />
-      <p className="text-center">Copyright © 2024 Outerity. Powered by TKDYY</p>
-    </div>
+    </footer>
   );
 };
 
 export default Footer;
-<Row></Row>;

@@ -1,4 +1,28 @@
 .review-list {
   display: flex;
   flex-direction: column;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.review-item {
+  padding: 18px 20px;
+  border-radius: 12px;
+  background-color: #fff;
+  border: 1px solid #eee;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.review-item:not(:last-child) {
+  margin-bottom: 4px;
+}
+
+.review-message {
+  margin-top: 20px;
+  padding: 18px;
+  text-align: center;
+  color: #777;
+  background-color: #fafafa;
+  border-radius: 10px;
+  border: 1px dashed #ddd;
 }
