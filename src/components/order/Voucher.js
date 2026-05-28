@@ -4,11 +4,21 @@ import React, { useEffect, useState } from "react";
 const Voucher = ({ setVoucher }) => {
   const [selectedVoucher, setSelectedVoucher] = useState("");
   const [vouchers, setVouchers] = useState([]);
+  const token = localStorage.getItem("Access_Token");
 
   useEffect(() => {
+    if (!token) {
+      return;
+    }
+
     // Gọi API để lấy danh sách voucher
     axios
-      .get("http://localhost:8888/api/v1/voucher-service/getAll")
+      .get("http://localhost:8888/api/v1/voucher-service/getAll", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
       .then((response) => {
         if (response.data.code === 1000) {
           setVouchers(response.data.result);
@@ -19,7 +29,7 @@ const Voucher = ({ setVoucher }) => {
       .catch((error) => {
         console.error("Lỗi API:", error);
       });
-  }, []);
+  }, [token]);
 
   const handleVoucherChange = (e) => {
     setSelectedVoucher(e.target.value);

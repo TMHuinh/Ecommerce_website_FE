@@ -1,15 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { Row } from "react-bootstrap";
 import Review from "../review/Review";
 import "./ReviewList.css";
+
 const ReviewList = ({ productID }) => {
-  const [reviews, setReview] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
+    if (!productID) return;
+
     const fetchReviews = async () => {
+      setLoading(true);
+
       try {
         const response = await fetch(
           `http://localhost:8888/api/v1/review-service/review/list-review-of-product/${productID}`,
-          { method: "GET" }
+          {
+            method: "GET",
+          }
         );
 
         if (!response.ok) {
@@ -17,24 +25,33 @@ const ReviewList = ({ productID }) => {
         }
 
         const data = await response.json();
-        const reviewData = data.result; // Assuming 'result' contains the list of reviews
-        setReview(reviewData); // Corrected from setProduct(productData)
+        setReviews(data.result || []);
       } catch (error) {
         console.error("Error fetching reviews:", error);
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchReviews();
-  }, [productID]); // Adding 'productID' as a dependency
+  }, [productID]);
+
+  if (loading) {
+    return <p className="review-message">Đang tải đánh giá...</p>;
+  }
+
+  if (reviews.length === 0) {
+    return <p className="review-message">Chưa có đánh giá nào.</p>;
+  }
 
   return (
-    <Row className="review-list">
-      {reviews.map((item, index) => (
-        <div>
-          <Review key={index} review={item}></Review>
-          <hr />
+    <div className="review-list">
+      {reviews.map((item) => (
+        <div key={item.id || item.reviewID} className="review-item">
+          <Review review={item} />
         </div>
       ))}
-    </Row>
+    </div>
   );
 };
 

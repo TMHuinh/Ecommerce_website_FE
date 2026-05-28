@@ -20,8 +20,8 @@ const ProductList = ({ title }) => {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
-        const data = await response.json(); // Parse JSON response
-        setProducts(data.result); // Assuming the API returns an array of products
+        const data = await response.json();
+        setProducts(data.result || []);
       } catch (error) {
         console.error("Error fetching products:", error);
       }
@@ -29,24 +29,36 @@ const ProductList = ({ title }) => {
 
     fetchProducts();
   }, []);
+
   return (
-    <Container>
-      <br />
-      <h2 className="text-center">{title}</h2>
-      <br />
-      <Row className="g-4">
-        {products.map((product, index) => (
-          <ProductCard key={index} product={product} />
-        ))}
-      </Row>
-      <Row className="my-2">
-        <Col className="product-more text-center mx-auto">
-          <a href="/product/all" className="btn-dark">
+    <section className="product-list-section">
+      <Container>
+        <div className="product-list-header">
+          <h2>{title}</h2>
+          <div className="product-title-line"></div>
+        </div>
+
+        <Row className="g-4 justify-content-center">
+          {products.map((product) => (
+            <Col
+              key={product.id || product.productId}
+              xs={6}
+              sm={6}
+              md={4}
+              lg={3}
+              className="d-flex"
+            >
+              <ProductCard product={product} />
+            </Col>
+          ))}
+        </Row>
+        <div className="product-more">
+          <a href="/product/all" className="product-more-btn">
             XEM THÊM
           </a>
-        </Col>
-      </Row>
-    </Container>
+        </div>
+      </Container>
+    </section>
   );
 };
 

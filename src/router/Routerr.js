@@ -8,9 +8,15 @@ import OrderPage from "../pages/order/OrderPage";
 import PaymentResult from "../components/payment/PaymentResult";
 import SuccessPayment from "../components/payment/SuccessPayment";
 import FailedPayment from "../components/payment/FailPayment";
+import About from "../pages/about/About";
+import Contact from "../pages/contact/Contact";
+import OrderHistory from "../pages/order/OrderHistory";
+
 const Routerr = () => {
   const routes = useRoutes([
     { path: "/", element: <Home /> },
+    { path: "/about", element: <About /> },
+    { path: "/contact", element: <Contact /> },
     { path: "/product/:id", element: <ProductDetail /> },
     { path: "/product/all", element: <Product /> },
     { path: "/order", element: <OrderPage /> },
@@ -18,7 +24,10 @@ const Routerr = () => {
     { path: "/payment-success", element: <SuccessPayment /> },
     { path: "/payment-fail", element: <FailedPayment /> },
     { path: "/cart", element: <CartPage /> },
+    { path: "/order-history", element: <OrderHistory /> },
   ]);
+
   return routes;
 };
+
 export default Routerr;

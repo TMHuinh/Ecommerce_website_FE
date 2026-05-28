@@ -1,6 +1,6 @@
 import React from "react";
 import "./ProductCard.css";
-import { Col } from "react-bootstrap";
+
 const ProductCard = ({ product }) => {
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -8,47 +8,55 @@ const ProductCard = ({ product }) => {
       currency: "VND",
     }).format(value);
   };
-  // const createSlug = (str) => {
-  //   return str
-  //     .toLowerCase() // Chuyển thành chữ thường
-  //     .replace(/[^\w\s-]/g, "") // Loại bỏ các ký tự đặc biệt
-  //     .trim() // Loại bỏ khoảng trắng ở đầu và cuối chuỗi
-  //     .replace(/\s+/g, "-") // Thay thế tất cả khoảng trắng (1 hoặc nhiều) bằng dấu gạch ngang
-  //     .replace(/-+/g, "-"); // Loại bỏ các dấu gạch ngang liên tiếp
-  // };
-  const createSlug = (str) => {
+
+  const createSlug = (str = "") => {
     return str
       .toLowerCase()
-      .normalize("NFD") // tách dấu ra khỏi chữ
-      .replace(/[\u0300-\u036f]/g, "") // xóa dấu
-      .replace(/đ/g, "d") // đổi đ -> d
-      .replace(/Đ/g, "D") // đổi Đ -> D
-      .replace(/[^a-z0-9\s-]/g, "") // chỉ giữ chữ không dấu, số, khoảng trắng, -
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .replace(/[^a-z0-9\s-]/g, "")
       .trim()
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-");
   };
+
   const calculateDiscountedPrice = (originalPrice, discountPercent) => {
-    return formatCurrency(
-      originalPrice - (originalPrice * discountPercent) / 100
-    );
+    const discountedPrice =
+      originalPrice - (originalPrice * discountPercent) / 100;
+
+    return formatCurrency(discountedPrice);
   };
+
+  const imageURL = product?.variants?.[0]?.imageURL;
+
   return (
-    <Col xl={3} md={4} sm={6} className="col-6">
-      <a href={`/product/${createSlug(product.name)}`} className="card">
-        <img src={product.variants[0].imageURL} alt="" />
-        <div className="title my-2">
-          <strong>{product.name}</strong>
-          <span>
+    <a href={`/product/${createSlug(product.name)}`} className="product-card">
+      <div className="product-card-image">
+        <img src={imageURL} alt={product.name} />
+      </div>
+
+      {product.discountPercent > 0 && (
+        <div className="product-discount">
+          <span>-{product.discountPercent}%</span>
+        </div>
+      )}
+
+      <div className="product-info">
+        <strong className="product-name">{product.name}</strong>
+
+        <div className="product-price">
+          <span className="sale-price">
             {calculateDiscountedPrice(product.price, product.discountPercent)}
           </span>
-          <del className="mx-2">{formatCurrency(product.price)}</del>
+
+          {product.discountPercent > 0 && (
+            <del className="old-price">{formatCurrency(product.price)}</del>
+          )}
         </div>
-        <div className="discount">
-          <span>{`-${product.discountPercent}%`}</span>
-        </div>
-      </a>
-    </Col>
+      </div>
+    </a>
   );
 };
 
